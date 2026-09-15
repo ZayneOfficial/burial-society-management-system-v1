@@ -1,0 +1,13 @@
+node_modules/
+.env
+*.log
+# Historical one-time import files
+f17_f18_f19_import.json
+import-f17-f18-f19.js
+backup-before-funeral-edit-delete/
+# MongoDB database backups
+backups/
+*.tar.gz
+*.bson
+
+Code backups/

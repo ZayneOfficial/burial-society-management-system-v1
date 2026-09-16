@@ -31,6 +31,52 @@ const memberSchema = new mongoose.Schema({
   join_date: { type: Date, default: Date.now }
 }, { collection: "members" });
 
+const dependentSchema = new mongoose.Schema({
+  member_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Member",
+    required: true,
+    index: true
+  },
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  surname: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  relationship: {
+    type: String,
+    enum: ["Wife", "Child"],
+    required: true
+  },
+  date_of_birth: {
+    type: Date,
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ["Active", "Inactive"],
+    default: "Active"
+  },
+  created_at: {
+    type: Date,
+    default: Date.now
+  }
+}, { collection: "dependents" });
+
+const Dependent = mongoose.model("Dependent", dependentSchema);
+
+function isChildAgeValid(dateOfBirth) {
+  const dob = new Date(dateOfBirth);
+  const today = new Date();
+  const cutoff = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+  return dob >= cutoff && dob <= today;
+}
+
 const funeralSchema = new mongoose.Schema({
   deceased_name: { type: String, required: true, trim: true },
   funeral_date: { type: Date, required: true },
@@ -661,9 +707,21 @@ app.get("/api/members/:id", ...requireRole("admin"), async (req, res) => {
 
 app.delete("/api/members/:id", ...requireRole("admin"), async (req, res) => {
   try {
-    await Member.findByIdAndDelete(req.params.id);
-    res.json({ message: "Member deleted." });
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid member ID." });
+    }
+
+    const member = await Member.findById(req.params.id).lean();
+    if (!member) {
+      return res.status(404).json({ message: "Member not found." });
+    }
+
+    await Dependent.deleteMany({ member_id: member._id });
+    await Member.findByIdAndDelete(member._id);
+
+    res.json({ message: "Member and their dependants deleted." });
   } catch (err) {
+    console.error("Delete member error:", err);
     res.status(400).json({ message: "Could not delete member." });
   }
 });
@@ -1342,6 +1400,160 @@ app.put("/api/payment-change-requests/:id/reject", ...requireRole("admin"), asyn
 
 
 
+// ============================================================
+// DEPENDANTS MANAGEMENT
+// Dependants belong to one member and can be a Wife or Child.
+// Only admins can add/edit/delete dependants.
+// Members can view their own dependants through /api/member-payments/:vn.
+// ============================================================
+
+app.get("/api/members/:id/dependents", ...requireRole("admin"), async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid member ID." });
+    }
+
+    const member = await Member.findById(req.params.id).select("_id vn_number name surname status").lean();
+    if (!member) {
+      return res.status(404).json({ message: "Member not found." });
+    }
+
+    const dependents = await Dependent.find({ member_id: member._id })
+      .sort({ relationship: 1, name: 1, surname: 1 })
+      .lean();
+
+    res.json({ member, dependents });
+  } catch (err) {
+    console.error("Load dependants error:", err);
+    res.status(500).json({ message: "Could not load dependants." });
+  }
+});
+
+app.post("/api/members/:id/dependents", ...requireRole("admin"), async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid member ID." });
+    }
+
+    const member = await Member.findById(req.params.id).select("_id vn_number name surname").lean();
+    if (!member) {
+      return res.status(404).json({ message: "Member not found." });
+    }
+
+    const name = String(req.body.name || "").trim();
+    const surname = String(req.body.surname || "").trim();
+    const relationship = String(req.body.relationship || "").trim();
+    const dateOfBirth = req.body.date_of_birth;
+    const status = req.body.status === "Inactive" ? "Inactive" : "Active";
+
+    if (!name || !surname || !["Wife", "Child"].includes(relationship) || !dateOfBirth) {
+      return res.status(400).json({
+        message: "Name, surname, relationship and date of birth are required."
+      });
+    }
+
+    const parsedDate = new Date(dateOfBirth);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ message: "Invalid date of birth." });
+    }
+
+    if (parsedDate > new Date()) {
+      return res.status(400).json({ message: "Date of birth cannot be in the future." });
+    }
+
+    if (relationship === "Child" && !isChildAgeValid(parsedDate)) {
+      return res.status(400).json({
+        message: "Children registered as dependants must be 18 years old or younger."
+      });
+    }
+
+    const dependent = await Dependent.create({
+      member_id: member._id,
+      name,
+      surname,
+      relationship,
+      date_of_birth: parsedDate,
+      status
+    });
+
+    res.status(201).json({ message: "Dependant added successfully.", dependent });
+  } catch (err) {
+    console.error("Add dependant error:", err);
+    res.status(400).json({ message: "Could not add dependant." });
+  }
+});
+
+app.put("/api/dependents/:id", ...requireRole("admin"), async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid dependant ID." });
+    }
+
+    const dependent = await Dependent.findById(req.params.id);
+    if (!dependent) {
+      return res.status(404).json({ message: "Dependant not found." });
+    }
+
+    const name = String(req.body.name || "").trim();
+    const surname = String(req.body.surname || "").trim();
+    const relationship = String(req.body.relationship || "").trim();
+    const dateOfBirth = req.body.date_of_birth;
+    const status = req.body.status === "Inactive" ? "Inactive" : "Active";
+
+    if (!name || !surname || !["Wife", "Child"].includes(relationship) || !dateOfBirth) {
+      return res.status(400).json({
+        message: "Name, surname, relationship and date of birth are required."
+      });
+    }
+
+    const parsedDate = new Date(dateOfBirth);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ message: "Invalid date of birth." });
+    }
+
+    if (parsedDate > new Date()) {
+      return res.status(400).json({ message: "Date of birth cannot be in the future." });
+    }
+
+    if (relationship === "Child" && !isChildAgeValid(parsedDate)) {
+      return res.status(400).json({
+        message: "Children registered as dependants must be 18 years old or younger."
+      });
+    }
+
+    dependent.name = name;
+    dependent.surname = surname;
+    dependent.relationship = relationship;
+    dependent.date_of_birth = parsedDate;
+    dependent.status = status;
+
+    await dependent.save();
+
+    res.json({ message: "Dependant updated successfully.", dependent });
+  } catch (err) {
+    console.error("Edit dependant error:", err);
+    res.status(400).json({ message: "Could not update dependant." });
+  }
+});
+
+app.delete("/api/dependents/:id", ...requireRole("admin"), async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid dependant ID." });
+    }
+
+    const deleted = await Dependent.findByIdAndDelete(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Dependant not found." });
+    }
+
+    res.json({ message: "Dependant deleted successfully." });
+  } catch (err) {
+    console.error("Delete dependant error:", err);
+    res.status(400).json({ message: "Could not delete dependant." });
+  }
+});
+
 app.get("/api/member-payments/:vn", ...requireRole("member"), async (req, res) => {
   try {
     const vn = String(req.params.vn).trim();
@@ -1351,11 +1563,16 @@ app.get("/api/member-payments/:vn", ...requireRole("member"), async (req, res) =
     const member = await Member.findOne({ vn_number: vn }).lean();
     if (!member) return res.status(404).json({ message: "Member not found." });
 
-    const payments = await FuneralPayment.find({ vn_number: vn })
-      .sort({ funeral_date: -1 })
-      .lean();
+    const [payments, dependents] = await Promise.all([
+      FuneralPayment.find({ vn_number: vn })
+        .sort({ funeral_date: -1 })
+        .lean(),
+      Dependent.find({ member_id: member._id })
+        .sort({ relationship: 1, name: 1, surname: 1 })
+        .lean()
+    ]);
 
-    res.json({ member: publicMember(member), payments });
+    res.json({ member: publicMember(member), payments, dependents });
   } catch (err) {
     res.status(500).json({ message: "Could not load member payments." });
   }

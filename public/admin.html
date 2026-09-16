@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Admin Dashboard</title>
+  <link rel="icon" type="image/png" href="/images/cbs-favicon.png">
 
   <link rel="stylesheet" href="style.css">
 
@@ -716,6 +717,80 @@
           <tbody id="memberBody"></tbody>
 
         </table>
+
+      </div>
+
+
+      <!-- DEPENDANTS MANAGEMENT -->
+
+      <div id="dependentsPanel" class="edit-panel hidden" style="margin-top:14px">
+
+        <div class="section-title">
+          <div>
+            <h3>👨‍👩‍👧 Member Dependants</h3>
+            <div class="small" id="dependentMemberLabel"></div>
+          </div>
+
+          <button type="button" class="btn btn-light" id="closeDependents">Close</button>
+        </div>
+
+        <form id="dependentForm" class="form-grid" style="margin-top:10px">
+          <div>
+            <label>Name</label>
+            <input id="dependentName" required>
+          </div>
+
+          <div>
+            <label>Surname</label>
+            <input id="dependentSurname" required>
+          </div>
+
+          <div>
+            <label>Relationship</label>
+            <select id="dependentRelationship" required>
+              <option value="Wife">Wife</option>
+              <option value="Child">Child</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Date of Birth</label>
+            <input id="dependentDob" type="date" required>
+            <div class="small" id="dependentDobHint">For children, dependant must be 18 years old or younger.</div>
+          </div>
+
+          <div>
+            <label>Status</label>
+            <select id="dependentStatus">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+
+          <div class="full">
+            <button class="btn btn-primary" type="submit" id="dependentSubmit">Add Dependant</button>
+          </div>
+        </form>
+
+        <div id="dependentMessage" class="message"></div>
+
+        <div class="table-wrap" style="margin-top:10px">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Surname</th>
+                <th>Relationship</th>
+                <th>Date of Birth</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="dependentBody">
+              <tr><td colspan="6" class="empty">Select a member to manage dependants.</td></tr>
+            </tbody>
+          </table>
+        </div>
 
       </div>
 

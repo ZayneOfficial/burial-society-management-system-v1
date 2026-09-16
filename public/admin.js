@@ -17,6 +17,8 @@ let memberPages = 1;
 let currentFilter = "";
 let currentPayments = [];
 let currentFuneral = null;
+let currentDependentMemberId = null;
+let editingDependentId = null;
 
 function money(n){ return "R" + Number(n || 0).toLocaleString("en-ZA",{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function dateOnly(v){ return v ? new Date(v).toLocaleDateString("en-ZA") : "—"; }
@@ -42,7 +44,7 @@ async function loadMembers(){
       <tr>
         <td><b>${esc(m.vn_number)}</b></td><td>${esc(m.name)}</td><td>${esc(m.surname)}</td><td>${esc(m.phone)}</td>
         <td>${esc(m.status)}</td><td>${dateOnly(m.join_date)}</td>
-        <td><button class="btn btn-primary edit-member" data-id="${m._id}">✏️ Edit</button> <button class="btn btn-red delete-member" data-id="${m._id}">🗑️ Delete</button></td>
+        <td><button class="btn btn-primary edit-member" data-id="${m._id}">✏️ Edit</button> <button class="btn btn-dark manage-dependents" data-id="${m._id}" data-vn="${m.vn_number}" data-name="${m.name} ${m.surname}">👨‍👩‍👧 Dependants</button> <button class="btn btn-red delete-member" data-id="${m._id}">🗑️ Delete</button></td>
       </tr>`).join("") || `<tr><td colspan="7" class="empty">No members found.</td></tr>`;
   }catch(e){ message($("memberMessage"),e.message); }
 }
@@ -181,7 +183,151 @@ $("memberSearch").addEventListener("input",()=>{memberPage=1;loadMembers()});
 $("refreshMembers").onclick=loadMembers;
 $("prevPage").onclick=()=>{if(memberPage>1){memberPage--;loadMembers()}};
 $("nextPage").onclick=()=>{if(memberPage<memberPages){memberPage++;loadMembers()}};
+function getChildMaxDob(){
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  d.setFullYear(d.getFullYear() - 18);
+  return d.toISOString().slice(0,10);
+}
+
+function getTodayDate(){
+  return new Date().toISOString().slice(0,10);
+}
+
+function updateDependentDobLimit(){
+  const relationship = $("dependentRelationship").value;
+  const dob = $("dependentDob");
+  const hint = $("dependentDobHint");
+
+  dob.max = getTodayDate();
+
+  if(relationship === "Child") {
+    dob.min = getChildMaxDob();
+    hint.textContent = "Children must be 18 years old or younger.";
+  } else {
+    dob.removeAttribute("min");
+    hint.textContent = "Wife: enter the correct date of birth.";
+  }
+}
+
+function resetDependentForm(){
+  editingDependentId = null;
+  $("dependentForm").reset();
+  $("dependentRelationship").value = "Wife";
+  $("dependentStatus").value = "Active";
+  $("dependentSubmit").textContent = "Add Dependant";
+  updateDependentDobLimit();
+}
+
+$("dependentRelationship").addEventListener("change", updateDependentDobLimit);
+
+async function loadDependents(memberId, memberLabel=""){
+  currentDependentMemberId = memberId;
+  $("dependentsPanel").classList.remove("hidden");
+  $("dependentMemberLabel").textContent = memberLabel;
+  resetDependentForm();
+  $("dependentBody").innerHTML = `<tr><td colspan="6" class="empty">Loading dependants...</td></tr>`;
+
+  try{
+    const data = await api(`/api/members/${encodeURIComponent(memberId)}/dependents`);
+    const dependents = data.dependents || [];
+    $("dependentBody").innerHTML = dependents.map(d => `
+      <tr>
+        <td>${esc(d.name)}</td>
+        <td>${esc(d.surname)}</td>
+        <td>${esc(d.relationship)}</td>
+        <td>${dateOnly(d.date_of_birth)}</td>
+        <td>${esc(d.status)}</td>
+        <td>
+          <button class="btn btn-primary edit-dependent" data-id="${d._id}">✏️ Edit</button>
+          <button class="btn btn-red delete-dependent" data-id="${d._id}">🗑️ Delete</button>
+        </td>
+      </tr>`).join("") || `<tr><td colspan="6" class="empty">No dependants registered for this member.</td></tr>`;
+    $("dependentsPanel").scrollIntoView({behavior:"smooth",block:"start"});
+  }catch(err){
+    message($("dependentMessage"),err.message);
+  }
+}
+
+$("closeDependents").onclick=()=>{
+  $("dependentsPanel").classList.add("hidden");
+  currentDependentMemberId=null;
+  resetDependentForm();
+};
+
+$("dependentForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!currentDependentMemberId){
+    message($("dependentMessage"),"Select a member first.");
+    return;
+  }
+
+  try{
+    const payload={
+      name:$("dependentName").value.trim(),
+      surname:$("dependentSurname").value.trim(),
+      relationship:$("dependentRelationship").value,
+      date_of_birth:$("dependentDob").value,
+      status:$("dependentStatus").value
+    };
+
+    const url=editingDependentId
+      ? `/api/dependents/${encodeURIComponent(editingDependentId)}`
+      : `/api/members/${encodeURIComponent(currentDependentMemberId)}/dependents`;
+
+    const data=await api(url,{
+      method:editingDependentId?"PUT":"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload)
+    });
+
+    message($("dependentMessage"),data.message,true);
+    await loadDependents(currentDependentMemberId,$("dependentMemberLabel").textContent);
+  }catch(err){
+    message($("dependentMessage"),err.message);
+  }
+});
+
+$("dependentBody").addEventListener("click",async e=>{
+  const edit=e.target.closest(".edit-dependent");
+  if(edit){
+    try{
+      const data=await api(`/api/members/${encodeURIComponent(currentDependentMemberId)}/dependents`);
+      const d=(data.dependents||[]).find(x=>x._id===edit.dataset.id);
+      if(!d) throw new Error("Dependant not found.");
+      editingDependentId=d._id;
+      $("dependentName").value=d.name||"";
+      $("dependentSurname").value=d.surname||"";
+      $("dependentRelationship").value=d.relationship||"Wife";
+      updateDependentDobLimit();
+      $("dependentDob").value=d.date_of_birth ? new Date(d.date_of_birth).toISOString().slice(0,10) : "";
+      $("dependentStatus").value=d.status||"Active";
+      $("dependentSubmit").textContent="💾 Save Dependant";
+      $("dependentForm").scrollIntoView({behavior:"smooth",block:"center"});
+    }catch(err){message($("dependentMessage"),err.message)}
+    return;
+  }
+
+  const del=e.target.closest(".delete-dependent");
+  if(!del)return;
+  if(!confirm("Delete this dependant?\n\nThis will permanently remove the dependant record."))return;
+  try{
+    const data=await api(`/api/dependents/${encodeURIComponent(del.dataset.id)}`,{method:"DELETE"});
+    message($("dependentMessage"),data.message,true);
+    await loadDependents(currentDependentMemberId,$("dependentMemberLabel").textContent);
+  }catch(err){message($("dependentMessage"),err.message)}
+});
+
 $("memberBody").addEventListener("click",async e=>{
+  const dependentBtn=e.target.closest(".manage-dependents");
+  if(dependentBtn){
+    await loadDependents(
+      dependentBtn.dataset.id,
+      `${dependentBtn.dataset.vn} · ${dependentBtn.dataset.name}`
+    );
+    return;
+  }
+
   const editBtn=e.target.closest(".edit-member");
   if(editBtn){
     try{

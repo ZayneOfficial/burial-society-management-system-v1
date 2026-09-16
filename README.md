@@ -171,6 +171,20 @@ PDF status values use:
 - `✅ PAID`
 - `❌ NOT PAID`
 
+## 9. Dependants
+
+Each member can now have multiple dependants. A dependant is linked directly to the member and supports:
+
+- Wife
+- Child
+- Name and surname
+- Date of birth
+- Active / Inactive status
+
+Admins manage dependants from **Members Management → Dependants**. Admins can add, edit and delete dependant records. Members can view their own registered dependants from the member dashboard. **Children must be 18 years old or younger; the rule is enforced in both the form and the server API.**
+
+Dependants are stored in the MongoDB `dependents` collection and are automatically removed if their parent member is deleted.
+
 ## 9. Member dashboard
 
 Members log in with:

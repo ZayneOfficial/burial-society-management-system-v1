@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Member Dashboard</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/png" href="/images/cbs-favicon.png">
 </head>
 <body>
 <header class="app-header">
@@ -18,6 +19,16 @@
     <div class="section-title"><h2>My Details</h2></div>
     <div class="member-hero" id="details"></div>
   </section>
+  <section class="card" style="margin-top:14px">
+    <div class="section-title"><h2>My Dependants</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Surname</th><th>Relationship</th><th>Date of Birth</th><th>Status</th></tr></thead>
+        <tbody id="dependentBody"><tr><td colspan="5" class="empty">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
   <section class="card" style="margin-top:14px">
     <div class="section-title"><h2>My Funeral Contributions</h2></div>
     <div class="table-wrap">
@@ -46,6 +57,15 @@ async function load(){
     ["VN Number",m.vn_number],["Name",`${m.name} ${m.surname}`],["Phone",m.phone],
     ["Join Date",d(m.join_date)],["Status",m.status]
   ].map(x=>`<div class="info-box">${esc(x[0])}<b>${esc(x[1])}</b></div>`).join("");
+  $("dependentBody").innerHTML=(data.dependents||[]).map(dep=>`
+    <tr>
+      <td><b>${esc(dep.name)}</b></td>
+      <td>${esc(dep.surname)}</td>
+      <td>${esc(dep.relationship)}</td>
+      <td>${d(dep.date_of_birth)}</td>
+      <td>${esc(dep.status)}</td>
+    </tr>`).join("") || `<tr><td colspan="5" class="empty">No dependants registered.</td></tr>`;
+
   $("paymentBody").innerHTML=data.payments.map(p=>`
     <tr><td><b>${esc(p.funeral_deceased_name)}</b> - ${d(p.funeral_date)}</td>
     <td>${money(p.contribution_amount)}</td>

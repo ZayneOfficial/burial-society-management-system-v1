@@ -55,6 +55,7 @@
         <label>Full Name</label>
         <input id="memberFullName" placeholder="John Smith" autocomplete="name" required>
         <button class="btn btn-primary btn-large" type="submit">Login as Member</button>
+        <p id="memberLoginMessage" class="message error" role="alert" aria-live="polite"></p>
       </form>
     </section>
 
@@ -124,6 +125,8 @@ document.getElementById("adminForm").addEventListener("submit", async e => {
 
 document.getElementById("memberForm").addEventListener("submit", async e => {
   e.preventDefault();
+  const memberLoginMessage = document.getElementById("memberLoginMessage");
+  memberLoginMessage.textContent = "";
   try {
     const res = await fetch("/api/login", {
       method: "POST",
@@ -142,7 +145,9 @@ document.getElementById("memberForm").addEventListener("submit", async e => {
       member:data.member
     }));
     location.href = "/member.html";
-  } catch (err) { showMessage(err.message); }
+  } catch (err) {
+    memberLoginMessage.textContent = err.message;
+  }
 });
 
 document.getElementById("helperForm").addEventListener("submit", async e => {

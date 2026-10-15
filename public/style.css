@@ -154,6 +154,17 @@ select:focus {
   line-height: 1.2;
 }
 
+.btn-link {
+  text-decoration: none;
+}
+
+.analytics-page .btn {
+  width: auto;
+  min-height: 36px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
 .btn-large {
   width: 100%;
   min-height: 50px;

@@ -1,12 +1,14 @@
-const CACHE_NAME = "burial-society-shell-v1";
+const CACHE_NAME = "burial-society-shell-v2";
 const APP_SHELL = [
   "/",
   "/index.html",
   "/admin.html",
+  "/analytics.html",
   "/member.html",
   "/helper.html",
   "/style.css",
   "/app.js",
+  "/analytics.js",
   "/manifest.webmanifest",
   "/images/cbs-favicon.png",
   "/images/cbs-icon-192.png",

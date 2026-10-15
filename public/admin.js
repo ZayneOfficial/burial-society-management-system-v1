@@ -538,7 +538,7 @@ $("csvExport").onclick=()=>{
   const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="funeral-payments.csv";a.click();URL.revokeObjectURL(a.href);
 };
 $("logoutBtn").onclick=async()=>{try{await fetch("/api/logout",{method:"POST"});}catch(e){} localStorage.removeItem("session");location.href="/"};
-(async()=>{await loadMembers();await loadFunerals();})();
+(async()=>{await Promise.all([loadMembers(),loadFunerals()]);})();
 
 
 // ============================================================

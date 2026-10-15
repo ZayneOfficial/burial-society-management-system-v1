@@ -335,6 +335,27 @@ const visitSchema = new mongoose.Schema({
 
 const WebsiteVisit = mongoose.model("WebsiteVisit", visitSchema);
 
+const appInstallSchema = new mongoose.Schema({
+  install_id: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true
+  },
+  source: {
+    type: String,
+    enum: ["browser-event", "standalone-launch"],
+    required: true
+  },
+  installed_at: {
+    type: Date,
+    default: Date.now,
+    index: true
+  }
+}, { collection: "web_app_installs" });
+
+const WebAppInstall = mongoose.model("WebAppInstall", appInstallSchema);
+
 // ============================================================
 // SYNC CURRENT MEMBERS INTO AN EXISTING FUNERAL
 // ============================================================
@@ -430,6 +451,33 @@ app.post("/api/visits", async (req, res) => {
   }
 });
 
+app.post("/api/installs", async (req, res) => {
+  const body = req.body || {};
+  const installId = String(body.install_id || "");
+  const source = String(body.source || "");
+  const validInstallId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  if (!validInstallId.test(installId)
+    || !["browser-event", "standalone-launch"].includes(source)) {
+    return res.status(400).json({ message: "Invalid app installation data." });
+  }
+
+  try {
+    await WebAppInstall.updateOne(
+      { install_id: installId },
+      { $setOnInsert: { install_id: installId, source } },
+      { upsert: true }
+    );
+    res.status(201).json({ success: true });
+  } catch (err) {
+    if (err.code === 11000) {
+      return res.status(200).json({ success: true });
+    }
+    console.error("App installation tracking error:", err);
+    res.status(500).json({ message: "Could not record app installation." });
+  }
+});
+
 app.get("/api/visits/stats", ...requireRole("admin"), async (req, res) => {
   try {
     const now = new Date();
@@ -470,6 +518,41 @@ app.get("/api/visits/stats", ...requireRole("admin"), async (req, res) => {
     console.error("Visitor statistics error:", err);
     res.status(500).json({
       message: "Could not load visitor statistics."
+    });
+  }
+});
+
+app.get("/api/installs/stats", ...requireRole("admin"), async (req, res) => {
+  try {
+    const now = new Date();
+
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [today, thisWeek, thisMonth, total] = await Promise.all([
+      WebAppInstall.countDocuments({
+        installed_at: { $gte: startOfDay }
+      }),
+      WebAppInstall.countDocuments({
+        installed_at: { $gte: startOfWeek }
+      }),
+      WebAppInstall.countDocuments({
+        installed_at: { $gte: startOfMonth }
+      }),
+      WebAppInstall.countDocuments()
+    ]);
+
+    res.json({ today, thisWeek, thisMonth, total });
+  } catch (err) {
+    console.error("App installation statistics error:", err);
+    res.status(500).json({
+      message: "Could not load app installation statistics."
     });
   }
 });

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="CBS PORTAL">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/images/cbs-favicon.png">
+  <link rel="icon" type="image/png" href="/images/cbs-favicon.png">
+  <title>Website Analytics</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+  <script src="/analytics.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div>
+        <div class="header-title">Website Analytics</div>
+        <div class="header-sub" id="analyticsAdminName"></div>
+      </div>
+      <div class="toolbar">
+        <a class="btn btn-light" href="/admin.html">Admin Dashboard</a>
+        <button class="btn btn-light" id="analyticsLogoutBtn" type="button">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div class="section-title">
+        <h2>Website visits</h2>
+        <button class="btn btn-light" type="button" id="refreshAnalytics">Refresh</button>
+      </div>
+      <p class="small">Visit totals count page loads, not unique people.</p>
+      <p id="visitAnalyticsMessage" class="message" role="status" aria-live="polite"></p>
+      <section class="stats" aria-label="Website visit statistics">
+        <div class="card">
+          <div class="stat-label">TOTAL VISITS</div>
+          <div class="stat-value" id="visitTotal">—</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">TODAY</div>
+          <div class="stat-value" id="visitToday">—</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">THIS WEEK</div>
+          <div class="stat-value" id="visitThisWeek">—</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">THIS MONTH</div>
+          <div class="stat-value" id="visitThisMonth">—</div>
+        </div>
+      </section>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>App installations</h2>
+      </div>
+      <p class="small">Install totals count unique app installations reported by the browser. iPhone/iPad installs are recorded when the installed app is first opened.</p>
+      <p id="installAnalyticsMessage" class="message" role="status" aria-live="polite"></p>
+      <section class="stats" aria-label="App installation statistics">
+        <div class="card">
+          <div class="stat-label">TOTAL INSTALLS</div>
+          <div class="stat-value" id="installTotal">—</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">TODAY</div>
+          <div class="stat-value" id="installToday">—</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">THIS WEEK</div>
+          <div class="stat-value" id="installThisWeek">—</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">THIS MONTH</div>
+          <div class="stat-value" id="installThisMonth">—</div>
+        </div>
+      </section>
+    </section>
+  </main>
+</body>
+</html>

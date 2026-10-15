@@ -229,6 +229,22 @@ You can also set `PORT`, although Render provides it automatically.
 
 Before deployment, make sure your MongoDB Atlas Network Access allows the Render service to connect.
 
-## 11. Important security note
+## 11. Install on Android and iPhone
+
+The web app can be installed from its deployed HTTPS address. Render provides HTTPS automatically; installation and service workers do not work from a plain HTTP address except on `localhost`.
+
+### Android
+
+1. Open the deployed website in Chrome.
+2. Tap **Install app** when it appears, or open Chrome's menu and choose **Install app** / **Add to Home screen**.
+
+### iPhone or iPad
+
+1. Open the deployed website in Safari.
+2. Tap **Share**, then **Add to Home Screen**, and confirm.
+
+The installed app shell can open offline after it has been loaded once, but sign-in, member data, and management actions still require an internet connection.
+
+## 12. Important security note
 
 This starter implementation follows the requested localStorage session model. For a production society with sensitive member information, add server-side authentication/session or JWT middleware to protect all admin APIs and member-specific APIs, plus HTTPS and stronger member credentials.

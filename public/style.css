@@ -786,15 +786,23 @@ tbody tr:last-child td {
   display:block;
 }
 
-/* Loading Screen */
+/* App launch screen */
 #loadingScreen {
   position: fixed;
   inset: 0;
-  background: #ffffff;
+  background: #101318;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 99999;
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+
+#loadingScreen.launch-screen-hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .loading-box {
@@ -803,27 +811,23 @@ tbody tr:last-child td {
 }
 
 .loading-logo {
-  width: 85px;
-  height: 85px;
+  width: 150px;
+  height: 100px;
   object-fit: contain;
-  border-radius: 16px;
-  margin-bottom: 15px;
+  margin-bottom: 12px;
 }
 
 .loading-box h2 {
-  margin: 5px 0;
+  margin: 5px 0 12px;
   font-size: 26px;
-}
-
-.loading-box p {
-  margin: 8px 0 20px;
-  color: #666;
 }
 
 .loading-box small {
   display: block;
-  margin-top: 18px;
-  color: #888;
+  color: #d1d5db;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
 }
 
 /* Animated loader */

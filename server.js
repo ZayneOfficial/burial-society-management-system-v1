@@ -335,26 +335,15 @@ const visitSchema = new mongoose.Schema({
 
 const WebsiteVisit = mongoose.model("WebsiteVisit", visitSchema);
 
-const appInstallSchema = new mongoose.Schema({
-  install_id: {
-    type: String,
-    required: true,
-    unique: true,
-    index: true
-  },
-  source: {
-    type: String,
-    enum: ["browser-event", "standalone-launch"],
-    required: true
-  },
-  installed_at: {
+const installButtonClickSchema = new mongoose.Schema({
+  clicked_at: {
     type: Date,
     default: Date.now,
     index: true
   }
-}, { collection: "web_app_installs" });
+}, { collection: "app_install_button_clicks" });
 
-const WebAppInstall = mongoose.model("WebAppInstall", appInstallSchema);
+const InstallButtonClick = mongoose.model("InstallButtonClick", installButtonClickSchema);
 
 // ============================================================
 // SYNC CURRENT MEMBERS INTO AN EXISTING FUNERAL
@@ -451,30 +440,13 @@ app.post("/api/visits", async (req, res) => {
   }
 });
 
-app.post("/api/installs", async (req, res) => {
-  const body = req.body || {};
-  const installId = String(body.install_id || "");
-  const source = String(body.source || "");
-  const validInstallId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-  if (!validInstallId.test(installId)
-    || !["browser-event", "standalone-launch"].includes(source)) {
-    return res.status(400).json({ message: "Invalid app installation data." });
-  }
-
+app.post("/api/install-clicks", async (req, res) => {
   try {
-    await WebAppInstall.updateOne(
-      { install_id: installId },
-      { $setOnInsert: { install_id: installId, source } },
-      { upsert: true }
-    );
+    await InstallButtonClick.create({});
     res.status(201).json({ success: true });
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(200).json({ success: true });
-    }
-    console.error("App installation tracking error:", err);
-    res.status(500).json({ message: "Could not record app installation." });
+    console.error("Install button click tracking error:", err);
+    res.status(500).json({ message: "Could not record install button click." });
   }
 });
 
@@ -522,7 +494,7 @@ app.get("/api/visits/stats", ...requireRole("admin"), async (req, res) => {
   }
 });
 
-app.get("/api/installs/stats", ...requireRole("admin"), async (req, res) => {
+app.get("/api/install-clicks/stats", ...requireRole("admin"), async (req, res) => {
   try {
     const now = new Date();
 
@@ -536,23 +508,23 @@ app.get("/api/installs/stats", ...requireRole("admin"), async (req, res) => {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const [today, thisWeek, thisMonth, total] = await Promise.all([
-      WebAppInstall.countDocuments({
-        installed_at: { $gte: startOfDay }
+      InstallButtonClick.countDocuments({
+        clicked_at: { $gte: startOfDay }
       }),
-      WebAppInstall.countDocuments({
-        installed_at: { $gte: startOfWeek }
+      InstallButtonClick.countDocuments({
+        clicked_at: { $gte: startOfWeek }
       }),
-      WebAppInstall.countDocuments({
-        installed_at: { $gte: startOfMonth }
+      InstallButtonClick.countDocuments({
+        clicked_at: { $gte: startOfMonth }
       }),
-      WebAppInstall.countDocuments()
+      InstallButtonClick.countDocuments()
     ]);
 
     res.json({ today, thisWeek, thisMonth, total });
   } catch (err) {
-    console.error("App installation statistics error:", err);
+    console.error("Install button click statistics error:", err);
     res.status(500).json({
-      message: "Could not load app installation statistics."
+      message: "Could not load install button click statistics."
     });
   }
 });

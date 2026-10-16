@@ -8,9 +8,9 @@ document.getElementById("analyticsAdminName").textContent =
 
 async function loadAnalytics() {
   const visitMessage = document.getElementById("visitAnalyticsMessage");
-  const installMessage = document.getElementById("installAnalyticsMessage");
+  const installClickMessage = document.getElementById("installClickAnalyticsMessage");
   visitMessage.textContent = "Loading visit statistics...";
-  installMessage.textContent = "Loading installation statistics...";
+  installClickMessage.textContent = "Loading install button click statistics...";
 
   const statsRequests = [
     {
@@ -25,15 +25,15 @@ async function loadAnalytics() {
       error: "Could not load website visit statistics."
     },
     {
-      url: "/api/installs/stats",
-      message: installMessage,
+      url: "/api/install-clicks/stats",
+      message: installClickMessage,
       fields: {
-        total: "installTotal",
-        today: "installToday",
-        thisWeek: "installThisWeek",
-        thisMonth: "installThisMonth"
+        total: "installClickTotal",
+        today: "installClickToday",
+        thisWeek: "installClickThisWeek",
+        thisMonth: "installClickThisMonth"
       },
-      error: "Could not load app installation statistics."
+      error: "Could not load install button click statistics."
     }
   ];
 

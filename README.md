@@ -171,7 +171,7 @@ PDF status values use:
 - `✅ PAID`
 - `❌ NOT PAID`
 
-Website visit and app installation statistics are available on the separate admin-only **Website Analytics** page, linked from the admin dashboard. The page shows today, this week, this month, and all-time totals.
+Website visit and Install app button click statistics are available on the separate admin-only **Website Analytics** page, linked from the admin dashboard. The page shows today, this week, this month, and all-time totals.
 
 ## 9. Dependants
 
@@ -247,7 +247,7 @@ The web app can be installed from its deployed HTTPS address. Render provides HT
 
 The installed app shell can open offline after it has been loaded once, but sign-in, member data, and management actions still require an internet connection.
 
-The admin dashboard records website page visits and web app installations in MongoDB. Install totals are recorded once per browser installation: browsers that provide an install event are counted immediately, while iPhone/iPad installations are counted the first time the installed app is opened. Browser privacy settings or clearing site data can affect install deduplication; these counts are not app-store download totals. Visit totals count page loads, not unique people.
+The admin dashboard records website page visits and each click or tap on the **Install app** button in MongoDB. This measures interest in installing, not completed app installations. Visit totals count page loads, not unique people.
 
 ## 12. Important security note
 

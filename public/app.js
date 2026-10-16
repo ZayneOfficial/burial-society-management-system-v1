@@ -11,35 +11,8 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-const installIdStorageKey = "burialSocietyAppInstallId";
 const isInstalled = window.matchMedia("(display-mode: standalone)").matches
   || navigator.standalone === true;
-
-function recordAppInstallation(source) {
-  try {
-    let installId = localStorage.getItem(installIdStorageKey);
-    if (!installId) {
-      installId = window.crypto.randomUUID();
-      localStorage.setItem(installIdStorageKey, installId);
-    }
-
-    fetch("/api/installs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ install_id: installId, source })
-    }).then(response => {
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status}`);
-      }
-    }).catch(error => console.error("App installation tracking failed:", error));
-  } catch (error) {
-    console.error("Could not prepare app installation tracking:", error);
-  }
-}
-
-if (isInstalled) {
-  recordAppInstallation("standalone-launch");
-}
 
 const installButton = document.getElementById("installApp");
 const installHelp = document.getElementById("installHelp");
@@ -49,10 +22,19 @@ window.addEventListener("appinstalled", () => {
   if (installButton) installButton.hidden = true;
   if (installHelp) installHelp.hidden = true;
   installPrompt = null;
-  recordAppInstallation("browser-event");
 });
 
 if (installButton) {
+  installButton.addEventListener("click", () => {
+    fetch("/api/install-clicks", { method: "POST" })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`Server returned ${response.status}`);
+        }
+      })
+      .catch(error => console.error("Install button click tracking failed:", error));
+  });
+
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 

@@ -158,6 +158,10 @@ select:focus {
   text-decoration: none;
 }
 
+.admin-analytics-link {
+  opacity: 0;
+}
+
 .analytics-page .btn {
   width: auto;
   min-height: 36px;

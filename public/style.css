@@ -185,6 +185,10 @@ select:focus {
   margin-top: 18px;
 }
 
+#installApp {
+  margin-bottom: 8px;
+}
+
 .btn-dark {
   background: #111;
   color: #fff;

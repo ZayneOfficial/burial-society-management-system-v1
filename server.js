@@ -345,6 +345,56 @@ const installButtonClickSchema = new mongoose.Schema({
 
 const InstallButtonClick = mongoose.model("InstallButtonClick", installButtonClickSchema);
 
+const memberLoginAttemptSchema = new mongoose.Schema({
+  member_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Member",
+    default: null
+  },
+  vn_number: {
+    type: String,
+    default: "",
+    maxlength: 100
+  },
+  member_name: {
+    type: String,
+    default: "",
+    maxlength: 200
+  },
+  outcome: {
+    type: String,
+    enum: ["success", "failed"],
+    required: true
+  },
+  attempted_at: {
+    type: Date,
+    default: Date.now,
+    index: true
+  }
+}, { collection: "member_login_attempts" });
+
+const MemberLoginAttempt = mongoose.model("MemberLoginAttempt", memberLoginAttemptSchema);
+
+async function recordMemberLoginAttempt({
+  member = null,
+  vnNumber = "",
+  attemptedName = "",
+  outcome
+}) {
+  try {
+    await MemberLoginAttempt.create({
+      member_id: member?._id || null,
+      vn_number: String(member?.vn_number || vnNumber).trim().slice(0, 100),
+      member_name: member
+        ? `${member.name} ${member.surname}`.trim().slice(0, 200)
+        : String(attemptedName).trim().replace(/\s+/g, " ").slice(0, 200),
+      outcome
+    });
+  } catch (err) {
+    console.error("Member login analytics tracking error:", err);
+  }
+}
+
 // ============================================================
 // SYNC CURRENT MEMBERS INTO AN EXISTING FUNERAL
 // ============================================================
@@ -529,15 +579,44 @@ app.get("/api/install-clicks/stats", ...requireRole("admin"), async (req, res) =
   }
 });
 
+app.get("/api/member-logins/stats", ...requireRole("admin"), async (req, res) => {
+  try {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const [total, successful, failed, today, recent] = await Promise.all([
+      MemberLoginAttempt.countDocuments(),
+      MemberLoginAttempt.countDocuments({ outcome: "success" }),
+      MemberLoginAttempt.countDocuments({ outcome: "failed" }),
+      MemberLoginAttempt.countDocuments({ attempted_at: { $gte: startOfDay } }),
+      MemberLoginAttempt.find()
+        .sort({ attempted_at: -1 })
+        .limit(100)
+        .select("vn_number member_name outcome attempted_at")
+        .lean()
+    ]);
+
+    res.json({ total, successful, failed, today, recent });
+  } catch (err) {
+    console.error("Member login statistics error:", err);
+    res.status(500).json({
+      message: "Could not load member login statistics."
+    });
+  }
+});
+
 app.get("/api/health", async (req, res) => {
   res.json({ ok: true, database: mongoose.connection.readyState === 1 });
 });
 
 app.post("/api/login", async (req, res) => {
-  try {
-    const { email, password, vn_number, phone, full_name, helper_password } = req.body;
-    
+  const body = req.body || {};
+  const { email, password, vn_number, phone, full_name, helper_password } = body;
+  const isMemberLogin = body.role === "member"
+    || (!helper_password && Boolean(vn_number || full_name));
+  let attemptedMember = null;
 
+  try {
     if (email && password) {
       const admin = await Admin.findOne({ email: String(email).toLowerCase().trim() });
       if (!admin || !(await bcrypt.compare(String(password), admin.password))) {
@@ -629,8 +708,8 @@ if (vn_number && full_name && helper_password) {
   });
 }
 
-    if (vn_number && req.body.full_name) {
-  const fullName = String(req.body.full_name)
+    if (vn_number && full_name) {
+  const fullName = String(full_name)
     .trim()
     .replace(/\s+/g, " ")
     .toLowerCase();
@@ -638,8 +717,14 @@ if (vn_number && full_name && helper_password) {
   const member = await Member.findOne({
     vn_number: String(vn_number).trim()
   });
+  attemptedMember = member;
 
   if (!member) {
+    await recordMemberLoginAttempt({
+      vnNumber: vn_number,
+      attemptedName: full_name,
+      outcome: "failed"
+    });
     return res.status(401).json({ message: "Invalid VN Number or full name." });
   }
 
@@ -649,6 +734,7 @@ if (vn_number && full_name && helper_password) {
     .toLowerCase();
 
   if (memberFullName !== fullName) {
+    await recordMemberLoginAttempt({ member, vnNumber: vn_number, outcome: "failed" });
     return res.status(401).json({ message: "Invalid VN Number or full name." });
   }
 
@@ -657,6 +743,7 @@ if (vn_number && full_name && helper_password) {
     userId: member._id,
     vnNumber: member.vn_number
   });
+  await recordMemberLoginAttempt({ member, outcome: "success" });
   setSessionCookie(res, token);
   return res.json({
     role: "member",
@@ -664,10 +751,27 @@ if (vn_number && full_name && helper_password) {
   });
 }
 
+if (isMemberLogin) {
+  await recordMemberLoginAttempt({
+    member: attemptedMember,
+    vnNumber: vn_number,
+    attemptedName: full_name,
+    outcome: "failed"
+  });
+}
+
 return res.status(400).json({
   message: "Provide admin email/password or member VN/full name."
 });
   } catch (err) {
+    if (isMemberLogin) {
+      await recordMemberLoginAttempt({
+        member: attemptedMember,
+        vnNumber: vn_number,
+        attemptedName: full_name,
+        outcome: "failed"
+      });
+    }
     console.error(err);
     res.status(500).json({ message: "Login failed." });
   }

@@ -126,6 +126,7 @@ document.getElementById("memberForm").addEventListener("submit", async e => {
       method: "POST",
       headers: {"Content-Type":"application/json"},
      body: JSON.stringify({
+  role: "member",
   vn_number: memberVN.value.trim(),
   full_name: memberFullName.value.trim()
 })

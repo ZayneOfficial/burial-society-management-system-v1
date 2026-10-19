@@ -81,6 +81,48 @@
         </div>
       </section>
     </section>
+
+    <section class="card">
+      <div class="section-title">
+        <h2>Member login activity</h2>
+      </div>
+      <p class="small">Successful and failed member login attempts. The latest 100 attempts are shown; passwords are never recorded.</p>
+      <p id="memberLoginAnalyticsMessage" class="message" role="status" aria-live="polite"></p>
+      <section class="stats" aria-label="Member login statistics">
+        <div class="card">
+          <div class="stat-label">TOTAL ATTEMPTS</div>
+          <div class="stat-value" id="memberLoginTotal">—</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">SUCCESSFUL</div>
+          <div class="stat-value" id="memberLoginSuccessful">—</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">FAILED</div>
+          <div class="stat-value" id="memberLoginFailed">—</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">TODAY</div>
+          <div class="stat-value" id="memberLoginToday">—</div>
+        </div>
+      </section>
+      <h3>Recent attempts</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date and time</th>
+              <th>VN number</th>
+              <th>Member</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody id="memberLoginAttempts">
+            <tr><td colspan="4">Loading login activity...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   </main>
 </body>
 </html>

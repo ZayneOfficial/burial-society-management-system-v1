@@ -1,10 +1,12 @@
-const analyticsSession = JSON.parse(localStorage.getItem("session") || "null");
-if (!analyticsSession || analyticsSession.role !== "admin") {
-  location.href = "/";
+let analyticsSession = null;
+try {
+  analyticsSession = JSON.parse(localStorage.getItem("session") || "null");
+} catch (error) {
+  console.error("Could not read the saved analytics session:", error);
 }
 
 document.getElementById("analyticsAdminName").textContent =
-  analyticsSession.admin?.name || "Administrator";
+  analyticsSession?.admin?.name || "Administrator";
 
 async function loadAnalytics() {
   const visitMessage = document.getElementById("visitAnalyticsMessage");
@@ -41,7 +43,7 @@ async function loadAnalytics() {
 
   const requests = statsRequests.map(async request => {
     try {
-      const response = await fetch(request.url);
+      const response = await fetch(request.url, { credentials: "same-origin" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         throw new Error(data.message || "Request failed.");
@@ -65,7 +67,9 @@ async function loadAnalytics() {
 async function loadMemberLoginAnalytics(message) {
   const attemptsBody = document.getElementById("memberLoginAttempts");
   try {
-    const response = await fetch("/api/member-logins/stats");
+    const response = await fetch("/api/member-logins/stats", {
+      credentials: "same-origin"
+    });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       throw new Error(data.message || "Request failed.");

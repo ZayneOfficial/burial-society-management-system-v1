@@ -59,7 +59,7 @@ const dependentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["Pending", "Active", "Inactive"],
+    enum: ["Pending", "Active", "Inactive", "Rejected"],
     default: "Active"
   },
   created_at: {
@@ -1786,6 +1786,46 @@ app.put("/api/dependents/:id/approve", ...requireRole("admin"), async (req, res)
   } catch (err) {
     console.error("Approve dependant error:", err);
     res.status(500).json({ message: "Could not approve dependant." });
+  }
+});
+
+app.get("/api/dependent-approval-requests", ...requireRole("admin"), async (req, res) => {
+  try {
+    const requests = await Dependent.find({ status: "Pending" })
+      .populate("member_id", "vn_number name surname")
+      .sort({ created_at: 1 })
+      .lean();
+
+    res.json({ requests, count: requests.length });
+  } catch (err) {
+    console.error("Load dependant approval requests error:", err);
+    res.status(500).json({ message: "Could not load pending dependant approvals." });
+  }
+});
+
+app.put("/api/dependents/:id/reject", ...requireRole("admin"), async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid dependant ID." });
+    }
+
+    const dependent = await Dependent.findOneAndUpdate(
+      { _id: req.params.id, status: "Pending" },
+      { $set: { status: "Rejected" } },
+      { new: true, runValidators: true }
+    );
+    if (!dependent) {
+      const existing = await Dependent.findById(req.params.id).select("status").lean();
+      if (!existing) {
+        return res.status(404).json({ message: "Dependant submission not found." });
+      }
+      return res.status(409).json({ message: "This dependant submission is no longer pending." });
+    }
+
+    res.json({ message: "Dependant submission rejected.", dependent });
+  } catch (err) {
+    console.error("Reject dependant submission error:", err);
+    res.status(500).json({ message: "Could not reject dependant submission." });
   }
 });
 

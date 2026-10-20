@@ -233,7 +233,7 @@
 
       <div class="section-title">
 
-        <h2>🔔 Pending Helper Approvals</h2>
+        <h2>🔔 Pending Approval Requests</h2>
 
         <button
           class="btn btn-light"
@@ -251,6 +251,7 @@
         class="message"
       ></div>
 
+      <h3 style="margin:18px 0 6px">Pending Helper Payment Approvals</h3>
 
       <div
         id="approvalSummary"
@@ -302,6 +303,27 @@
 
         </table>
 
+      </div>
+
+      <h3 style="margin:18px 0 6px">Pending Member Dependant Approvals</h3>
+      <div id="dependentApprovalSummary" class="small">Checking for pending dependant submissions...</div>
+      <div class="table-wrap" style="margin-top:10px">
+        <table>
+          <thead>
+            <tr>
+              <th>Member VN</th>
+              <th>Member</th>
+              <th>Dependant</th>
+              <th>Relationship</th>
+              <th>Date of Birth</th>
+              <th>Submitted</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="dependentApprovalBody">
+            <tr><td colspan="7" class="empty">Loading pending dependant submissions...</td></tr>
+          </tbody>
+        </table>
       </div>
 
     </section>

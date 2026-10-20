@@ -239,7 +239,6 @@ async function loadDependents(memberId, memberLabel=""){
         <td>${dateOnly(d.date_of_birth)}</td>
         <td>${esc(d.status)}</td>
         <td>
-          ${d.status === "Pending" ? `<button class="btn btn-green approve-dependent" data-id="${d._id}">✓ Approve</button>` : ""}
           <button class="btn btn-primary edit-dependent" data-id="${d._id}">✏️ Edit</button>
           <button class="btn btn-red delete-dependent" data-id="${d._id}">🗑️ Delete</button>
         </td>
@@ -290,16 +289,6 @@ $("dependentForm").addEventListener("submit",async e=>{
 });
 
 $("dependentBody").addEventListener("click",async e=>{
-  const approve=e.target.closest(".approve-dependent");
-  if(approve){
-    try{
-      const data=await api(`/api/dependents/${encodeURIComponent(approve.dataset.id)}/approve`,{method:"PUT"});
-      message($("dependentMessage"),data.message,true);
-      await loadDependents(currentDependentMemberId,$("dependentMemberLabel").textContent);
-    }catch(err){message($("dependentMessage"),err.message)}
-    return;
-  }
-
   const edit=e.target.closest(".edit-dependent");
   if(edit){
     try{
@@ -780,11 +769,77 @@ if ($("refreshApprovals")) {
     "click",
     loadPendingApprovals
   );
+  $("refreshApprovals").addEventListener(
+    "click",
+    loadPendingDependentApprovals
+  );
 }
 
 
 // Load approvals when Admin Dashboard opens
 loadPendingApprovals();
+loadPendingDependentApprovals();
+
+async function loadPendingDependentApprovals() {
+  const body = $("dependentApprovalBody");
+  const summary = $("dependentApprovalSummary");
+  if (!body || !summary) return;
+
+  body.innerHTML = `<tr><td colspan="7" class="empty">Loading pending dependant submissions...</td></tr>`;
+  try {
+    const data = await api("/api/dependent-approval-requests");
+    const requests = data.requests || [];
+    summary.textContent =
+      `${requests.length} pending dependant submission${requests.length === 1 ? "" : "s"}.`;
+
+    body.innerHTML = requests.map(dependent => {
+      const member = dependent.member_id || {};
+      const submitted = dependent.created_at
+        ? new Date(dependent.created_at).toLocaleString()
+        : "-";
+      return `
+        <tr>
+          <td>${esc(member.vn_number || "-")}</td>
+          <td>${esc(`${member.name || ""} ${member.surname || ""}`.trim() || "Unknown")}</td>
+          <td>${esc(`${dependent.name || ""} ${dependent.surname || ""}`.trim())}</td>
+          <td>${esc(dependent.relationship || "-")}</td>
+          <td>${dateOnly(dependent.date_of_birth)}</td>
+          <td>${esc(submitted)}</td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-green approve-member-dependent" type="button" data-id="${esc(dependent._id)}">✅ Approve</button>
+              <button class="btn btn-red reject-member-dependent" type="button" data-id="${esc(dependent._id)}">❌ Reject</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join("") || `<tr><td colspan="7" class="empty">No pending dependant submissions.</td></tr>`;
+  } catch (err) {
+    summary.textContent = "Could not load pending dependant submissions.";
+    body.innerHTML = `<tr><td colspan="7" class="empty">${esc(err.message)}</td></tr>`;
+  }
+}
+
+$("dependentApprovalBody")?.addEventListener("click", async event => {
+  const approve = event.target.closest(".approve-member-dependent");
+  const reject = event.target.closest(".reject-member-dependent");
+  const action = approve ? "approve" : reject ? "reject" : null;
+  if (!action) return;
+
+  const confirmation = action === "approve"
+    ? "Approve this dependant submission?\n\nThe dependant will become active."
+    : "Reject this dependant submission?\n\nThe dependant will remain visible to the member as rejected.";
+  if (!confirm(confirmation)) return;
+
+  const id = (approve || reject).dataset.id;
+  try {
+    const data = await api(`/api/dependents/${encodeURIComponent(id)}/${action}`, { method: "PUT" });
+    message($("approvalMessage"), data.message, true);
+    await loadPendingDependentApprovals();
+  } catch (err) {
+    message($("approvalMessage"), err.message);
+  }
+});
 
 // ============================================================
 // PENDING HELPER APPROVALS

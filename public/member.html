@@ -26,7 +26,38 @@
     <div class="member-hero" id="details"></div>
   </section>
   <section class="card" style="margin-top:14px">
-    <div class="section-title"><h2>My Dependants</h2></div>
+    <div class="section-title">
+      <div>
+        <h2>My Dependants</h2>
+        <div class="small">New dependant details will be reviewed by an admin before activation.</div>
+      </div>
+    </div>
+    <form id="dependentForm" class="form-grid" style="margin:10px 0 16px">
+      <div>
+        <label for="dependentName">Name</label>
+        <input id="dependentName" required maxlength="100">
+      </div>
+      <div>
+        <label for="dependentSurname">Surname</label>
+        <input id="dependentSurname" required maxlength="100">
+      </div>
+      <div>
+        <label for="dependentRelationship">Relationship</label>
+        <select id="dependentRelationship" required>
+          <option value="Wife">Wife</option>
+          <option value="Child">Child</option>
+        </select>
+      </div>
+      <div>
+        <label for="dependentDob">Date of Birth</label>
+        <input id="dependentDob" type="date" required>
+        <div class="small" id="dependentDobHint">For children, dependant must be 18 years old or younger.</div>
+      </div>
+      <div class="full">
+        <button class="btn btn-primary" type="submit" id="dependentSubmit">Submit for Approval</button>
+      </div>
+    </form>
+    <div id="dependentMessage" class="message" aria-live="polite"></div>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Name</th><th>Surname</th><th>Relationship</th><th>Date of Birth</th><th>Status</th></tr></thead>
@@ -52,6 +83,23 @@ const $=id=>document.getElementById(id);
 function esc(v){return String(v??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function d(v){return v?new Date(v).toLocaleDateString("en-ZA"):"—"}
 function money(n){return "R"+Number(n||0).toLocaleString("en-ZA",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function message(text,ok=false){$("dependentMessage").textContent=text;$("dependentMessage").className="message "+(ok?"success":"error")}
+function dateInputValue(date){return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`}
+function updateDependentDobLimit(){
+  const dob=$("dependentDob");
+  const today=new Date();
+  today.setHours(0,0,0,0);
+  dob.max=dateInputValue(today);
+  if($("dependentRelationship").value==="Child"){
+    const childCutoff=new Date(today);
+    childCutoff.setFullYear(childCutoff.getFullYear()-18);
+    dob.min=dateInputValue(childCutoff);
+    $("dependentDobHint").textContent="Children must be 18 years old or younger.";
+  }else{
+    dob.removeAttribute("min");
+    $("dependentDobHint").textContent="Enter the dependant's correct date of birth.";
+  }
+}
 $("logoutBtn").onclick=async()=>{try{await fetch("/api/logout",{method:"POST"});}catch(e){} localStorage.removeItem("session");location.href="/"};
 async function load(){
   const res=await fetch("/api/member-payments/"+encodeURIComponent(session.vn_number));
@@ -78,6 +126,36 @@ async function load(){
     <td>${p.status==="PAID"?'<span class="badge paid">✅ PAID</span>':'<span class="badge not-paid">❌ NOT PAID</span>'}</td>
     <td>${d(p.payment_date)}</td></tr>`).join("")||`<tr><td colspan="4" class="empty">No funeral contributions yet.</td></tr>`;
 }
+ $("dependentRelationship").addEventListener("change",updateDependentDobLimit);
+ $("dependentForm").addEventListener("submit",async event=>{
+  event.preventDefault();
+  const submit=$("dependentSubmit");
+  submit.disabled=true;
+  try{
+    const res=await fetch("/api/member/dependents",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        name:$("dependentName").value.trim(),
+        surname:$("dependentSurname").value.trim(),
+        relationship:$("dependentRelationship").value,
+        date_of_birth:$("dependentDob").value
+      })
+    });
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.message||"Could not submit dependant.");
+    $("dependentForm").reset();
+    $("dependentRelationship").value="Wife";
+    updateDependentDobLimit();
+    message(data.message,true);
+    await load();
+  }catch(error){
+    message(error.message);
+  }finally{
+    submit.disabled=false;
+  }
+});
+updateDependentDobLimit();
 load();
 </script>
 </body>

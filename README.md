@@ -181,9 +181,9 @@ Each member can now have multiple dependants. A dependant is linked directly to 
 - Child
 - Name and surname
 - Date of birth
-- Active / Inactive status
+- Pending approval, Active, or Inactive status
 
-Admins manage dependants from **Members Management → Dependants**. Admins can add, edit and delete dependant records. Members can view their own registered dependants from the member dashboard. **Children must be 18 years old or younger; the rule is enforced in both the form and the server API.**
+Admins manage dependants from **Members Management → Dependants**. Admins can add, edit and delete dependant records. As a temporary self-service option, members can submit a dependant from their dashboard; each submission is saved as **Pending** and remains pending until an admin approves it from the member's Dependants panel. Members can view the status of their own registered dependants. **Children must be 18 years old or younger; the rule is enforced in both forms and the server APIs.**
 
 Dependants are stored in the MongoDB `dependents` collection and are automatically removed if their parent member is deleted.
 

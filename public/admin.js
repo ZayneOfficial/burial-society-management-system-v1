@@ -239,6 +239,7 @@ async function loadDependents(memberId, memberLabel=""){
         <td>${dateOnly(d.date_of_birth)}</td>
         <td>${esc(d.status)}</td>
         <td>
+          ${d.status === "Pending" ? `<button class="btn btn-green approve-dependent" data-id="${d._id}">✓ Approve</button>` : ""}
           <button class="btn btn-primary edit-dependent" data-id="${d._id}">✏️ Edit</button>
           <button class="btn btn-red delete-dependent" data-id="${d._id}">🗑️ Delete</button>
         </td>
@@ -289,6 +290,16 @@ $("dependentForm").addEventListener("submit",async e=>{
 });
 
 $("dependentBody").addEventListener("click",async e=>{
+  const approve=e.target.closest(".approve-dependent");
+  if(approve){
+    try{
+      const data=await api(`/api/dependents/${encodeURIComponent(approve.dataset.id)}/approve`,{method:"PUT"});
+      message($("dependentMessage"),data.message,true);
+      await loadDependents(currentDependentMemberId,$("dependentMemberLabel").textContent);
+    }catch(err){message($("dependentMessage"),err.message)}
+    return;
+  }
+
   const edit=e.target.closest(".edit-dependent");
   if(edit){
     try{

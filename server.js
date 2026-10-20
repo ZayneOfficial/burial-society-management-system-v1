@@ -59,7 +59,7 @@ const dependentSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["Active", "Inactive"],
+    enum: ["Pending", "Active", "Inactive"],
     default: "Active"
   },
   created_at: {
@@ -1562,7 +1562,7 @@ app.put("/api/payment-change-requests/:id/reject", ...requireRole("admin"), asyn
 // ============================================================
 // DEPENDANTS MANAGEMENT
 // Dependants belong to one member and can be a Wife or Child.
-// Only admins can add/edit/delete dependants.
+// Admins manage records; members can submit records pending approval.
 // Members can view their own dependants through /api/member-payments/:vn.
 // ============================================================
 
@@ -1710,6 +1710,82 @@ app.delete("/api/dependents/:id", ...requireRole("admin"), async (req, res) => {
   } catch (err) {
     console.error("Delete dependant error:", err);
     res.status(400).json({ message: "Could not delete dependant." });
+  }
+});
+
+app.post("/api/member/dependents", ...requireRole("member"), async (req, res) => {
+  try {
+    const member = await Member.findById(req.auth.user_id).select("_id").lean();
+    if (!member) {
+      return res.status(404).json({ message: "Member not found." });
+    }
+
+    const name = String(req.body.name || "").trim();
+    const surname = String(req.body.surname || "").trim();
+    const relationship = String(req.body.relationship || "").trim();
+    const dateOfBirth = req.body.date_of_birth;
+
+    if (!name || !surname || !["Wife", "Child"].includes(relationship) || !dateOfBirth) {
+      return res.status(400).json({
+        message: "Name, surname, relationship and date of birth are required."
+      });
+    }
+
+    const parsedDate = new Date(dateOfBirth);
+    if (Number.isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ message: "Invalid date of birth." });
+    }
+    if (parsedDate > new Date()) {
+      return res.status(400).json({ message: "Date of birth cannot be in the future." });
+    }
+    if (relationship === "Child" && !isChildAgeValid(parsedDate)) {
+      return res.status(400).json({
+        message: "Children registered as dependants must be 18 years old or younger."
+      });
+    }
+
+    const dependent = await Dependent.create({
+      member_id: member._id,
+      name,
+      surname,
+      relationship,
+      date_of_birth: parsedDate,
+      status: "Pending"
+    });
+
+    res.status(201).json({
+      message: "Dependant submitted for admin approval.",
+      dependent
+    });
+  } catch (err) {
+    console.error("Member dependant submission error:", err);
+    res.status(400).json({ message: "Could not submit dependant for approval." });
+  }
+});
+
+app.put("/api/dependents/:id/approve", ...requireRole("admin"), async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid dependant ID." });
+    }
+
+    const dependent = await Dependent.findOneAndUpdate(
+      { _id: req.params.id, status: "Pending" },
+      { $set: { status: "Active" } },
+      { new: true, runValidators: true }
+    );
+    if (!dependent) {
+      const existing = await Dependent.findById(req.params.id).select("status").lean();
+      if (!existing) {
+        return res.status(404).json({ message: "Dependant not found." });
+      }
+      return res.status(409).json({ message: "This dependant is no longer pending approval." });
+    }
+
+    res.json({ message: "Dependant approved successfully.", dependent });
+  } catch (err) {
+    console.error("Approve dependant error:", err);
+    res.status(500).json({ message: "Could not approve dependant." });
   }
 });
 

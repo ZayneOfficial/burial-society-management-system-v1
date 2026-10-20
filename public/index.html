@@ -83,6 +83,13 @@
    
   </main>
 
+<dialog id="memberHelpDialog" class="member-help-dialog" aria-labelledby="memberHelpTitle">
+  <h2 id="memberHelpTitle">Unable to log in?</h2>
+  <p id="memberHelpError"></p>
+  <a id="memberHelpLink" class="btn whatsapp" href="#">Click for help to login</a>
+  <button id="closeMemberHelp" class="btn btn-light" type="button">Close</button>
+</dialog>
+
 <script>
 const tabs = document.querySelectorAll(".tab");
 tabs.forEach(tab => tab.addEventListener("click", () => {
@@ -142,7 +149,15 @@ document.getElementById("memberForm").addEventListener("submit", async e => {
     location.href = "/member.html";
   } catch (err) {
     memberLoginMessage.textContent = err.message;
+    document.getElementById("memberHelpError").textContent = err.message;
+    document.getElementById("memberHelpDialog").showModal();
   }
+});
+
+document.getElementById("memberHelpLink").href =
+  `https://wa.me/27602624696?text=${encodeURIComponent("please help me to login to my dashboard.")}`;
+document.getElementById("closeMemberHelp").addEventListener("click", () => {
+  document.getElementById("memberHelpDialog").close();
 });
 
 document.getElementById("helperForm").addEventListener("submit", async e => {

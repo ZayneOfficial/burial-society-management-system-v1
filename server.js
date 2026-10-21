@@ -1642,6 +1642,26 @@ app.post("/api/members/:id/dependents", ...requireRole("admin"), async (req, res
   }
 });
 
+app.put("/api/dependents/approve-pending", ...requireRole("admin"), async (req, res) => {
+  try {
+    const result = await Dependent.updateMany(
+      { status: "Pending" },
+      { $set: { status: "Active" } }
+    );
+
+    const count = result.modifiedCount;
+    res.json({
+      message: count
+        ? `${count} dependant submission${count === 1 ? "" : "s"} approved successfully.`
+        : "There are no pending dependant submissions to approve.",
+      count
+    });
+  } catch (err) {
+    console.error("Approve all pending dependants error:", err);
+    res.status(500).json({ message: "Could not approve pending dependant submissions." });
+  }
+});
+
 app.put("/api/dependents/:id", ...requireRole("admin"), async (req, res) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -1786,26 +1806,6 @@ app.put("/api/dependents/:id/approve", ...requireRole("admin"), async (req, res)
   } catch (err) {
     console.error("Approve dependant error:", err);
     res.status(500).json({ message: "Could not approve dependant." });
-  }
-});
-
-app.put("/api/dependents/approve-pending", ...requireRole("admin"), async (req, res) => {
-  try {
-    const result = await Dependent.updateMany(
-      { status: "Pending" },
-      { $set: { status: "Active" } }
-    );
-
-    const count = result.modifiedCount;
-    res.json({
-      message: count
-        ? `${count} dependant submission${count === 1 ? "" : "s"} approved successfully.`
-        : "There are no pending dependant submissions to approve.",
-      count
-    });
-  } catch (err) {
-    console.error("Approve all pending dependants error:", err);
-    res.status(500).json({ message: "Could not approve pending dependant submissions." });
   }
 });
 

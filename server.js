@@ -1789,6 +1789,31 @@ app.put("/api/dependents/:id/approve", ...requireRole("admin"), async (req, res)
   }
 });
 
+app.put("/api/members/:id/dependents/approve-pending", ...requireRole("admin"), async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid member ID." });
+    }
+
+    const result = await Dependent.updateMany(
+      { member_id: req.params.id, status: "Pending" },
+      { $set: { status: "Active" } }
+    );
+    if (result.matchedCount === 0) {
+      return res.status(409).json({ message: "This member has no pending dependant submissions." });
+    }
+
+    const count = result.modifiedCount;
+    res.json({
+      message: `${count} dependant submission${count === 1 ? "" : "s"} approved successfully.`,
+      count
+    });
+  } catch (err) {
+    console.error("Approve all member dependants error:", err);
+    res.status(500).json({ message: "Could not approve pending dependant submissions." });
+  }
+});
+
 app.get("/api/dependent-approval-requests", ...requireRole("admin"), async (req, res) => {
   try {
     const requests = await Dependent.find({ status: "Pending" })

@@ -783,24 +783,23 @@ loadPendingDependentApprovals();
 async function loadPendingDependentApprovals() {
   const body = $("dependentApprovalBody");
   const summary = $("dependentApprovalSummary");
+  const approveAllButton = $("approveAllDependentApprovals");
   if (!body || !summary) return;
 
+  if (approveAllButton) approveAllButton.disabled = true;
   body.innerHTML = `<tr><td colspan="7" class="empty">Loading pending dependant submissions...</td></tr>`;
   try {
     const data = await api("/api/dependent-approval-requests");
     const requests = data.requests || [];
-    const pendingCountsByMember = requests.reduce((counts, dependent) => {
-      const memberId = dependent.member_id?._id;
-      if (memberId) counts[memberId] = (counts[memberId] || 0) + 1;
-      return counts;
-    }, {});
     summary.textContent =
       `${requests.length} pending dependant submission${requests.length === 1 ? "" : "s"}.`;
+    if (approveAllButton) {
+      approveAllButton.disabled = requests.length === 0;
+      approveAllButton.dataset.count = requests.length;
+    }
 
     body.innerHTML = requests.map(dependent => {
       const member = dependent.member_id || {};
-      const memberId = member._id || "";
-      const pendingForMember = pendingCountsByMember[memberId] || 0;
       const submitted = dependent.created_at
         ? new Date(dependent.created_at).toLocaleString()
         : "-";
@@ -815,7 +814,6 @@ async function loadPendingDependentApprovals() {
           <td>
             <div style="display:flex;gap:6px;flex-wrap:wrap">
               <button class="btn btn-green approve-member-dependent" type="button" data-id="${esc(dependent._id)}">✅ Approve</button>
-              ${pendingForMember > 1 ? `<button class="btn btn-primary approve-all-member-dependents" type="button" data-member-id="${esc(memberId)}" data-member-name="${esc(`${member.name || ""} ${member.surname || ""}`.trim() || member.vn_number || "this member")}" data-count="${pendingForMember}">Approve all ${pendingForMember} for member</button>` : ""}
               <button class="btn btn-red reject-member-dependent" type="button" data-id="${esc(dependent._id)}">❌ Reject</button>
             </div>
           </td>
@@ -828,27 +826,25 @@ async function loadPendingDependentApprovals() {
   }
 }
 
+$("approveAllDependentApprovals")?.addEventListener("click", async event => {
+  const button = event.currentTarget;
+  const count = Number(button.dataset.count || 0);
+  if (!count || !confirm(`Approve all ${count} pending dependant submissions for all members?\n\nThese dependants will become active.`)) return;
+
+  button.disabled = true;
+  try {
+    const data = await api("/api/dependents/approve-pending", { method: "PUT" });
+    message($("approvalMessage"), data.message, true);
+    await loadPendingDependentApprovals();
+  } catch (err) {
+    message($("approvalMessage"), err.message);
+    button.disabled = false;
+  }
+});
+
 $("dependentApprovalBody")?.addEventListener("click", async event => {
-  const approveAll = event.target.closest(".approve-all-member-dependents");
   const approve = event.target.closest(".approve-member-dependent");
   const reject = event.target.closest(".reject-member-dependent");
-  if (approveAll) {
-    const memberName = approveAll.dataset.memberName;
-    const count = approveAll.dataset.count;
-    if (!confirm(`Approve all ${count} pending dependant submissions for ${memberName}?\n\nThese dependants will become active.`)) return;
-
-    approveAll.disabled = true;
-    try {
-      const data = await api(`/api/members/${encodeURIComponent(approveAll.dataset.memberId)}/dependents/approve-pending`, { method: "PUT" });
-      message($("approvalMessage"), data.message, true);
-      await loadPendingDependentApprovals();
-    } catch (err) {
-      message($("approvalMessage"), err.message);
-      approveAll.disabled = false;
-    }
-    return;
-  }
-
   const action = approve ? "approve" : reject ? "reject" : null;
   if (!action) return;
 

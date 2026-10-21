@@ -306,7 +306,10 @@
       </div>
 
       <h3 style="margin:18px 0 6px">Pending Member Dependant Approvals</h3>
-      <div id="dependentApprovalSummary" class="small">Checking for pending dependant submissions...</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <div id="dependentApprovalSummary" class="small">Checking for pending dependant submissions...</div>
+        <button class="btn btn-green" type="button" id="approveAllDependentApprovals" disabled>Approve all pending dependants</button>
+      </div>
       <div class="table-wrap" style="margin-top:10px">
         <table>
           <thead>

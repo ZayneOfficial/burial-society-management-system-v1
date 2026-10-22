@@ -206,7 +206,7 @@ function updateDependentDobLimit(){
     hint.textContent = "Children must be 18 years old or younger.";
   } else {
     dob.removeAttribute("min");
-    hint.textContent = "Wife: enter the correct date of birth.";
+    hint.textContent = "Enter the dependant's correct date of birth.";
   }
 }
 

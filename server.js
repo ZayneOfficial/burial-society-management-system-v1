@@ -50,7 +50,7 @@ const dependentSchema = new mongoose.Schema({
   },
   relationship: {
     type: String,
-    enum: ["Wife", "Child"],
+    enum: ["Wife", "Husband", "Child"],
     required: true
   },
   date_of_birth: {
@@ -1561,7 +1561,7 @@ app.put("/api/payment-change-requests/:id/reject", ...requireRole("admin"), asyn
 
 // ============================================================
 // DEPENDANTS MANAGEMENT
-// Dependants belong to one member and can be a Wife or Child.
+// Dependants belong to one member and can be a Wife, Husband or Child.
 // Admins manage records; members can submit records pending approval.
 // Members can view their own dependants through /api/member-payments/:vn.
 // ============================================================
@@ -1605,7 +1605,7 @@ app.post("/api/members/:id/dependents", ...requireRole("admin"), async (req, res
     const dateOfBirth = req.body.date_of_birth;
     const status = req.body.status === "Inactive" ? "Inactive" : "Active";
 
-    if (!name || !surname || !["Wife", "Child"].includes(relationship) || !dateOfBirth) {
+    if (!name || !surname || !["Wife", "Husband", "Child"].includes(relationship) || !dateOfBirth) {
       return res.status(400).json({
         message: "Name, surname, relationship and date of birth are required."
       });
@@ -1679,7 +1679,7 @@ app.put("/api/dependents/:id", ...requireRole("admin"), async (req, res) => {
     const dateOfBirth = req.body.date_of_birth;
     const status = req.body.status === "Inactive" ? "Inactive" : "Active";
 
-    if (!name || !surname || !["Wife", "Child"].includes(relationship) || !dateOfBirth) {
+    if (!name || !surname || !["Wife", "Husband", "Child"].includes(relationship) || !dateOfBirth) {
       return res.status(400).json({
         message: "Name, surname, relationship and date of birth are required."
       });
@@ -1745,7 +1745,7 @@ app.post("/api/member/dependents", ...requireRole("member"), async (req, res) =>
     const relationship = String(req.body.relationship || "").trim();
     const dateOfBirth = req.body.date_of_birth;
 
-    if (!name || !surname || !["Wife", "Child"].includes(relationship) || !dateOfBirth) {
+    if (!name || !surname || !["Wife", "Husband", "Child"].includes(relationship) || !dateOfBirth) {
       return res.status(400).json({
         message: "Name, surname, relationship and date of birth are required."
       });

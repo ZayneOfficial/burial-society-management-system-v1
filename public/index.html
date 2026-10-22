@@ -53,12 +53,14 @@
 
     <section id="member-login" class="login-panel hidden">
       <form id="memberForm">
-        <label>VN Number</label>
-        <input id="memberVN" placeholder="VN001" required>
+        <label for="memberVN">VN Number</label>
+        <input id="memberVN" placeholder="VN123" maxlength="5" pattern="VN[0-9]{3}" title="Enter VN followed by exactly three digits, for example VN123." autocapitalize="characters" autocomplete="off" aria-describedby="memberVNHint" required>
+        <p id="memberVNHint" class="hint">Use VN followed by three digits, for example VN123. Lowercase letters are changed to uppercase.</p>
 
         <label>Full Name</label>
         <input id="memberFullName" placeholder="John Smith" autocomplete="name" required>
         <button class="btn btn-primary btn-large" type="submit">Login as Member</button>
+        <button id="openMemberHelp" class="btn btn-light btn-large" type="button">Need help logging in?</button>
         <p id="memberLoginMessage" class="message error" role="alert" aria-live="polite"></p>
       </form>
     </section>
@@ -84,8 +86,13 @@
   </main>
 
 <dialog id="memberHelpDialog" class="member-help-dialog" aria-labelledby="memberHelpTitle">
-  <h2 id="memberHelpTitle">Unable to log in?</h2>
-  <p id="memberHelpError"></p>
+  <h2 id="memberHelpTitle">Login Help</h2>
+  <p id="memberHelpError" aria-live="polite"></p>
+  <p class="login-helper-intro">I can check your VN number format and guide you through common login problems. Do not share your password here.</p>
+  <label for="memberHelpVN">Check your VN number</label>
+  <input id="memberHelpVN" placeholder="VN123" maxlength="5" autocapitalize="characters" autocomplete="off" aria-describedby="memberHelpResponse">
+  <button id="checkMemberHelpVN" class="btn btn-primary" type="button">Check VN format</button>
+  <p id="memberHelpResponse" class="login-helper-response" role="status" aria-live="polite">A valid VN number has VN followed by exactly three digits, such as VN123.</p>
   <a id="memberHelpLink" class="btn whatsapp" href="#">Click for help to login</a>
   <button id="closeMemberHelp" class="btn btn-light" type="button">Close</button>
 </dialog>
@@ -105,6 +112,34 @@ function showMessage(text, ok=false) {
   message.textContent = text;
   message.className = "message " + (ok ? "success" : "error");
 }
+
+const memberVNInput = document.getElementById("memberVN");
+const memberHelpVNInput = document.getElementById("memberHelpVN");
+const memberHelpDialog = document.getElementById("memberHelpDialog");
+
+memberVNInput.addEventListener("input", () => {
+  memberVNInput.value = memberVNInput.value.toUpperCase();
+});
+memberHelpVNInput.addEventListener("input", () => {
+  memberHelpVNInput.value = memberHelpVNInput.value.toUpperCase();
+});
+document.getElementById("openMemberHelp").addEventListener("click", () => {
+  document.getElementById("memberHelpError").textContent = "";
+  memberHelpVNInput.value = memberVNInput.value;
+  memberHelpDialog.showModal();
+});
+document.getElementById("checkMemberHelpVN").addEventListener("click", () => {
+  const response = document.getElementById("memberHelpResponse");
+  const vnNumber = memberHelpVNInput.value.trim().toUpperCase();
+  memberHelpVNInput.value = vnNumber;
+
+  if (/^VN\d{3}$/.test(vnNumber)) {
+    response.textContent = `${vnNumber} has the correct format. Make sure your full name matches the name registered with the society. If you still cannot log in, contact support below.`;
+    return;
+  }
+
+  response.textContent = "That format is not correct. Enter VN followed by exactly three digits, for example VN123.";
+});
 
 document.getElementById("adminForm").addEventListener("submit", async e => {
   e.preventDefault();
@@ -128,13 +163,20 @@ document.getElementById("memberForm").addEventListener("submit", async e => {
   e.preventDefault();
   const memberLoginMessage = document.getElementById("memberLoginMessage");
   memberLoginMessage.textContent = "";
+  const vnNumber = memberVNInput.value.trim().toUpperCase();
+  memberVNInput.value = vnNumber;
+  if (!/^VN\d{3}$/.test(vnNumber)) {
+    memberLoginMessage.textContent = "VN Number must be VN followed by exactly three digits, for example VN123.";
+    memberVNInput.focus();
+    return;
+  }
   try {
     const res = await fetch("/api/login", {
       method: "POST",
       headers: {"Content-Type":"application/json"},
      body: JSON.stringify({
   role: "member",
-  vn_number: memberVN.value.trim(),
+  vn_number: vnNumber,
   full_name: memberFullName.value.trim()
 })
     });
@@ -150,7 +192,8 @@ document.getElementById("memberForm").addEventListener("submit", async e => {
   } catch (err) {
     memberLoginMessage.textContent = err.message;
     document.getElementById("memberHelpError").textContent = err.message;
-    document.getElementById("memberHelpDialog").showModal();
+    memberHelpVNInput.value = vnNumber;
+    memberHelpDialog.showModal();
   }
 });
 

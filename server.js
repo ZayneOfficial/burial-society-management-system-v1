@@ -709,13 +709,25 @@ if (vn_number && full_name && helper_password) {
 }
 
     if (vn_number && full_name) {
+  const normalizedVN = String(vn_number).trim().toUpperCase();
+  if (!/^VN\d{3}$/.test(normalizedVN)) {
+    await recordMemberLoginAttempt({
+      vnNumber: normalizedVN,
+      attemptedName: full_name,
+      outcome: "failed"
+    });
+    return res.status(400).json({
+      message: "VN Number must be VN followed by exactly three digits, for example VN123."
+    });
+  }
+
   const fullName = String(full_name)
     .trim()
     .replace(/\s+/g, " ")
     .toLowerCase();
 
   const member = await Member.findOne({
-    vn_number: String(vn_number).trim()
+    vn_number: normalizedVN
   });
   attemptedMember = member;
 

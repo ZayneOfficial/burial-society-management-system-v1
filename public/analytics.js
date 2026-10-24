@@ -11,9 +11,11 @@ document.getElementById("analyticsAdminName").textContent =
 async function loadAnalytics() {
   const visitMessage = document.getElementById("visitAnalyticsMessage");
   const installClickMessage = document.getElementById("installClickAnalyticsMessage");
+  const adminLoginMessage = document.getElementById("adminLoginAnalyticsMessage");
   const memberLoginMessage = document.getElementById("memberLoginAnalyticsMessage");
   visitMessage.textContent = "Loading visit statistics...";
   installClickMessage.textContent = "Loading install button click statistics...";
+  adminLoginMessage.textContent = "Loading admin login statistics...";
   memberLoginMessage.textContent = "Loading member login statistics...";
 
   const statsRequests = [
@@ -60,8 +62,53 @@ async function loadAnalytics() {
     }
   });
 
+  requests.push(loadAdminLoginAnalytics(adminLoginMessage));
   requests.push(loadMemberLoginAnalytics(memberLoginMessage));
   await Promise.all(requests);
+}
+
+async function loadAdminLoginAnalytics(message) {
+  const attemptsBody = document.getElementById("adminLoginAttempts");
+  try {
+    const response = await fetch("/api/admin-logins/stats", {
+      credentials: "same-origin"
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || "Request failed.");
+    }
+
+    document.getElementById("adminLoginTotal").textContent = data.total;
+    document.getElementById("adminLoginSuccessful").textContent = data.successful;
+    document.getElementById("adminLoginFailed").textContent = data.failed;
+    document.getElementById("adminLoginToday").textContent = data.today;
+
+    attemptsBody.replaceChildren();
+    if (!data.recent.length) {
+      const row = attemptsBody.insertRow();
+      const cell = row.insertCell();
+      cell.colSpan = 3;
+      cell.textContent = "No admin login attempts recorded yet.";
+    } else {
+      data.recent.forEach(attempt => {
+        const row = attemptsBody.insertRow();
+        row.insertCell().textContent = new Date(attempt.attempted_at).toLocaleString();
+        row.insertCell().textContent = attempt.attempted_email || "Unknown";
+        row.insertCell().textContent = attempt.outcome === "success" ? "Successful" : "Failed";
+      });
+    }
+
+    message.textContent = "";
+    message.className = "message";
+  } catch (error) {
+    message.textContent = `Could not load admin login statistics. ${error.message}`;
+    message.className = "message error";
+    attemptsBody.replaceChildren();
+    const row = attemptsBody.insertRow();
+    const cell = row.insertCell();
+    cell.colSpan = 3;
+    cell.textContent = "Could not load recent login attempts.";
+  }
 }
 
 async function loadMemberLoginAnalytics(message) {

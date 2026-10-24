@@ -84,6 +84,47 @@
 
     <section class="card">
       <div class="section-title">
+        <h2>Admin login activity</h2>
+      </div>
+      <p class="small">Successful and failed admin login attempts. The latest 100 attempts are shown; passwords are never recorded. The entered email is shown and may not identify a member.</p>
+      <p id="adminLoginAnalyticsMessage" class="message" role="status" aria-live="polite"></p>
+      <section class="stats" aria-label="Admin login statistics">
+        <div class="card">
+          <div class="stat-label">TOTAL ATTEMPTS</div>
+          <div class="stat-value" id="adminLoginTotal">—</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">SUCCESSFUL</div>
+          <div class="stat-value" id="adminLoginSuccessful">—</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">FAILED</div>
+          <div class="stat-value" id="adminLoginFailed">—</div>
+        </div>
+        <div class="card">
+          <div class="stat-label">TODAY</div>
+          <div class="stat-value" id="adminLoginToday">—</div>
+        </div>
+      </section>
+      <h3>Recent attempts</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date and time</th>
+              <th>Attempted email</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody id="adminLoginAttempts">
+            <tr><td colspan="3">Loading login activity...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">
         <h2>Member login activity</h2>
       </div>
       <p class="small">Successful and failed member login attempts. The latest 100 attempts are shown; passwords are never recorded.</p>

@@ -375,6 +375,37 @@ const memberLoginAttemptSchema = new mongoose.Schema({
 
 const MemberLoginAttempt = mongoose.model("MemberLoginAttempt", memberLoginAttemptSchema);
 
+const adminLoginAttemptSchema = new mongoose.Schema({
+  attempted_email: {
+    type: String,
+    default: "",
+    maxlength: 254
+  },
+  outcome: {
+    type: String,
+    enum: ["success", "failed"],
+    required: true
+  },
+  attempted_at: {
+    type: Date,
+    default: Date.now,
+    index: true
+  }
+}, { collection: "admin_login_attempts" });
+
+const AdminLoginAttempt = mongoose.model("AdminLoginAttempt", adminLoginAttemptSchema);
+
+async function recordAdminLoginAttempt({ email = "", outcome }) {
+  try {
+    await AdminLoginAttempt.create({
+      attempted_email: String(email).trim().toLowerCase().slice(0, 254),
+      outcome
+    });
+  } catch (err) {
+    console.error("Admin login analytics tracking error:", err);
+  }
+}
+
 async function recordMemberLoginAttempt({
   member = null,
   vnNumber = "",
@@ -605,6 +636,32 @@ app.get("/api/member-logins/stats", ...requireRole("admin"), async (req, res) =>
   }
 });
 
+app.get("/api/admin-logins/stats", ...requireRole("admin"), async (req, res) => {
+  try {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const [total, successful, failed, today, recent] = await Promise.all([
+      AdminLoginAttempt.countDocuments(),
+      AdminLoginAttempt.countDocuments({ outcome: "success" }),
+      AdminLoginAttempt.countDocuments({ outcome: "failed" }),
+      AdminLoginAttempt.countDocuments({ attempted_at: { $gte: startOfDay } }),
+      AdminLoginAttempt.find()
+        .sort({ attempted_at: -1 })
+        .limit(100)
+        .select("attempted_email outcome attempted_at")
+        .lean()
+    ]);
+
+    res.json({ total, successful, failed, today, recent });
+  } catch (err) {
+    console.error("Admin login statistics error:", err);
+    res.status(500).json({
+      message: "Could not load admin login statistics."
+    });
+  }
+});
+
 app.get("/api/health", async (req, res) => {
   res.json({ ok: true, database: mongoose.connection.readyState === 1 });
 });
@@ -618,11 +675,14 @@ app.post("/api/login", async (req, res) => {
 
   try {
     if (email && password) {
-      const admin = await Admin.findOne({ email: String(email).toLowerCase().trim() });
+      const attemptedEmail = String(email).toLowerCase().trim();
+      const admin = await Admin.findOne({ email: attemptedEmail });
       if (!admin || !(await bcrypt.compare(String(password), admin.password))) {
+        await recordAdminLoginAttempt({ email: attemptedEmail, outcome: "failed" });
         return res.status(401).json({ message: "Invalid admin email or password." });
       }
       const token = await createSession({ role: "admin", userId: admin._id });
+      await recordAdminLoginAttempt({ email: attemptedEmail, outcome: "success" });
       setSessionCookie(res, token);
       return res.json({
         role: "admin",

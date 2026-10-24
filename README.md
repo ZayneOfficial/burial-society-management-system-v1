@@ -173,6 +173,8 @@ PDF status values use:
 
 Website visit and Install app button click statistics are available on the separate admin-only **Website Analytics** page, linked from the admin dashboard. The page shows today, this week, this month, and all-time totals. Member login activity also records successful and failed attempts, showing the total counts and latest 100 attempts; passwords are never recorded.
 
+Admin login activity records successful and failed login attempts and displays the total, daily count, and latest 100 attempts on the analytics page. Only the entered admin email and outcome are recorded; passwords are never stored. Since member profiles do not include email addresses, an entered email cannot be reliably matched to a named member.
+
 ## 9. Dependants
 
 Each member can now have multiple dependants. A dependant is linked directly to the member and supports:

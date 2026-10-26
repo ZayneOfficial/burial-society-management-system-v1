@@ -159,7 +159,7 @@ select:focus {
 }
 
 .admin-analytics-link {
-  opacity: 0;
+  opacity: 1;
 }
 
 .analytics-page .btn {

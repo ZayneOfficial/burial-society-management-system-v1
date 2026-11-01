@@ -56,15 +56,18 @@ button {
     max(16px, env(safe-area-inset-right))
     max(16px, env(safe-area-inset-bottom))
     max(16px, env(safe-area-inset-left));
-  background: linear-gradient(135deg, #101318, #263238);
+  background:
+    radial-gradient(ellipse at 18% 15%, #315c7a 0, transparent 38%),
+    linear-gradient(135deg, #101827, #263b4b);
 }
 
 .login-card {
   width: min(440px, 100%);
   background: white;
-  border-radius: 18px;
-  padding: 24px;
-  box-shadow: 0 18px 50px #0005;
+  border: 1px solid #ffffffb3;
+  border-radius: 22px;
+  padding: 28px;
+  box-shadow: 0 24px 70px #0006;
 }
 
 .brand {
@@ -95,23 +98,27 @@ p {
 
 .tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
 }
 
 .tab {
   border: 0;
-  padding: 13px;
-  min-height: 46px;
-  border-radius: 10px;
-  background: #eef1f4;
+  padding: 12px 16px;
+  min-height: 48px;
+  border-radius: 12px;
+  background: #eef4f8;
+  color: #28445b;
   font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .tab.active {
-  background: #111;
+  background: linear-gradient(110deg, #1261a0, #1976b9);
   color: #fff;
+  box-shadow: 0 8px 18px #1261a033;
+  cursor: default;
 }
 
 /* =========================
@@ -197,6 +204,18 @@ select:focus {
 .btn-primary {
   background: var(--blue);
   color: #fff;
+}
+
+.login-page .btn-primary {
+  background: linear-gradient(110deg, #1261a0, #1976b9);
+  border-radius: 12px;
+  box-shadow: 0 8px 18px #1261a033;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.login-page .btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 11px 22px #1261a044;
 }
 
 .btn-green {
@@ -694,8 +713,8 @@ tbody tr:last-child td {
   }
 
   .login-card {
-    padding: 17px;
-    border-radius: 14px;
+    padding: 20px;
+    border-radius: 18px;
   }
 
   .brand h1 {
@@ -703,15 +722,6 @@ tbody tr:last-child td {
   }
 
   
-  .tabs {
-    gap: 5px;
-  }
-
-  .tab {
-    padding: 11px 7px;
-    font-size: 13px;
-  }
-
   .header-inner {
     gap: 6px;
   }

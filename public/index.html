@@ -36,12 +36,12 @@
     <p id="installHelp" class="hint" hidden>Tap Share in Safari, then choose “Add to Home Screen”.</p>
 
     <div class="tabs">
-  <button class="tab active" data-tab="admin">Admin Login</button>
-  <button class="tab" data-tab="member">Member Login</button>
-  <button class="tab" data-tab="helper">Helper Login</button>
+  <button class="tab" data-tab="admin" hidden>Admin Login</button>
+  <button class="tab active" data-tab="member" aria-current="page">Member Login</button>
+  <button class="tab" data-tab="helper" hidden>Helper Login</button>
 </div>
 
-    <section id="admin-login" class="login-panel">
+    <section id="admin-login" class="login-panel hidden">
       <form id="adminForm">
         <label>Email</label>
         <input id="adminEmail" type="email" placeholder="Admin email" required>
@@ -51,7 +51,7 @@
       </form>
     </section>
 
-    <section id="member-login" class="login-panel hidden">
+    <section id="member-login" class="login-panel">
       <form id="memberForm">
         <label>VN Number</label>
         <input id="memberVN" placeholder="VN001" required>

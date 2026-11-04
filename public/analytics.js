@@ -87,7 +87,7 @@ async function loadAdminLoginAnalytics(message) {
     if (!data.recent.length) {
       const row = attemptsBody.insertRow();
       const cell = row.insertCell();
-      cell.colSpan = 3;
+      cell.colSpan = 4;
       cell.textContent = "No admin login attempts recorded yet.";
     } else {
       data.recent.forEach(attempt => {
@@ -95,6 +95,7 @@ async function loadAdminLoginAnalytics(message) {
         row.insertCell().textContent = new Date(attempt.attempted_at).toLocaleString();
         row.insertCell().textContent = attempt.attempted_email || "Unknown";
         row.insertCell().textContent = attempt.outcome === "success" ? "Successful" : "Failed";
+        row.insertCell().textContent = attempt.client_ip || "Not recorded";
       });
     }
 
@@ -106,7 +107,7 @@ async function loadAdminLoginAnalytics(message) {
     attemptsBody.replaceChildren();
     const row = attemptsBody.insertRow();
     const cell = row.insertCell();
-    cell.colSpan = 3;
+    cell.colSpan = 4;
     cell.textContent = "Could not load recent login attempts.";
   }
 }

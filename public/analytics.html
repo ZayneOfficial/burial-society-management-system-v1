@@ -86,7 +86,7 @@
       <div class="section-title">
         <h2>Admin login activity</h2>
       </div>
-      <p class="small">Successful and failed admin login attempts. The latest 100 attempts are shown; passwords are never recorded. The entered email is shown and may not identify a member.</p>
+      <p class="small">The latest 100 successful and failed admin login attempts are shown. Passwords are never recorded. The entered email may not identify a member. IP addresses are recorded only for successful logins and do not provide a precise physical location.</p>
       <p id="adminLoginAnalyticsMessage" class="message" role="status" aria-live="polite"></p>
       <section class="stats" aria-label="Admin login statistics">
         <div class="card">
@@ -114,10 +114,11 @@
               <th>Date and time</th>
               <th>Attempted email</th>
               <th>Result</th>
+              <th>IP address</th>
             </tr>
           </thead>
           <tbody id="adminLoginAttempts">
-            <tr><td colspan="3">Loading login activity...</td></tr>
+            <tr><td colspan="4">Loading login activity...</td></tr>
           </tbody>
         </table>
       </div>

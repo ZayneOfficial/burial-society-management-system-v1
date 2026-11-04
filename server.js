@@ -9,6 +9,16 @@ const crypto = require("crypto");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const trustProxySetting = process.env.TRUST_PROXY;
+if (trustProxySetting) {
+  const trustProxyHops = Number(trustProxySetting);
+  app.set(
+    "trust proxy",
+    Number.isSafeInteger(trustProxyHops) && trustProxyHops >= 0
+      ? trustProxyHops
+      : trustProxySetting
+  );
+}
 
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
@@ -381,6 +391,11 @@ const adminLoginAttemptSchema = new mongoose.Schema({
     default: "",
     maxlength: 254
   },
+  client_ip: {
+    type: String,
+    default: "",
+    maxlength: 64
+  },
   outcome: {
     type: String,
     enum: ["success", "failed"],
@@ -395,10 +410,11 @@ const adminLoginAttemptSchema = new mongoose.Schema({
 
 const AdminLoginAttempt = mongoose.model("AdminLoginAttempt", adminLoginAttemptSchema);
 
-async function recordAdminLoginAttempt({ email = "", outcome }) {
+async function recordAdminLoginAttempt({ email = "", outcome, clientIp = "" }) {
   try {
     await AdminLoginAttempt.create({
       attempted_email: String(email).trim().toLowerCase().slice(0, 254),
+      client_ip: outcome === "success" ? String(clientIp).slice(0, 64) : "",
       outcome
     });
   } catch (err) {
@@ -649,7 +665,7 @@ app.get("/api/admin-logins/stats", ...requireRole("admin"), async (req, res) => 
       AdminLoginAttempt.find()
         .sort({ attempted_at: -1 })
         .limit(100)
-        .select("attempted_email outcome attempted_at")
+        .select("attempted_email client_ip outcome attempted_at")
         .lean()
     ]);
 
@@ -682,7 +698,11 @@ app.post("/api/login", async (req, res) => {
         return res.status(401).json({ message: "Invalid admin email or password." });
       }
       const token = await createSession({ role: "admin", userId: admin._id });
-      await recordAdminLoginAttempt({ email: attemptedEmail, outcome: "success" });
+      await recordAdminLoginAttempt({
+        email: attemptedEmail,
+        outcome: "success",
+        clientIp: req.ip
+      });
       setSessionCookie(res, token);
       return res.json({
         role: "admin",

@@ -570,6 +570,11 @@ tbody tr:last-child td {
 ========================= */
 
 @media (max-width: 700px) {
+  .btn {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
   .analytics-page .header-inner {
     flex-wrap: wrap;
   }
@@ -643,7 +648,9 @@ tbody tr:last-child td {
   }
 
   .toolbar .btn {
-    width: 100%;
+    width: auto;
+    max-width: 100%;
+    justify-self: start;
   }
 
   .filters {
@@ -653,7 +660,9 @@ tbody tr:last-child td {
   }
 
   .filters .btn {
-    width: 100%;
+    width: auto;
+    max-width: 100%;
+    justify-self: start;
   }
 
   .filters #whatsappAll {
@@ -772,7 +781,7 @@ tbody tr:last-child td {
   }
 
   .section-title .btn {
-    width: 100%;
+    width: auto;
   }
 
   .pagination {
@@ -813,10 +822,6 @@ tbody tr:last-child td {
 
   .stat-value {
     font-size: 22px;
-  }
-
-  .btn {
-    width: 100%;
   }
 
   .pagination {

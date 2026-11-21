@@ -115,6 +115,10 @@ Open:
 http://localhost:3000
 ```
 
+### Temporarily block all access
+
+Set `MAINTENANCE_MODE=true` in the server environment and restart/redeploy the server to keep the normal portal loading screen visible and reject all API requests, including requests from users with existing sessions. Access remains blocked until you remove the variable or set it to `false` and restart/redeploy. This switch does not change login credentials or delete sessions.
+
 ## 6. Funeral/payment workflow
 
 When an admin creates a funeral:

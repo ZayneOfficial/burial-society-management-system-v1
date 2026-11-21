@@ -23,6 +23,46 @@ if (trustProxySetting) {
 app.use(cors());
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  if (process.env.MAINTENANCE_MODE !== "true") {
+    return next();
+  }
+
+  if (req.method === "GET" && req.path === "/images/cbs.png") {
+    return next();
+  }
+
+  res.set("Cache-Control", "no-store");
+  if (req.path.startsWith("/api/")) {
+    return res.status(503).json({
+      message: "Unable to complete this request. Please try again."
+    });
+  }
+
+  return res.status(503).type("html").send(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#101318">
+  <title>CBS PORTAL</title>
+  <style>
+    body { min-height: 100vh; margin: 0; display: grid; place-items: center; background: #101318; color: #fff; font: 16px Arial, sans-serif; }
+    main { padding: 30px; text-align: center; }
+    img { width: 150px; height: 100px; margin-bottom: 12px; object-fit: contain; }
+    h1 { margin: 5px 0 12px; font-size: 26px; }
+    small { color: #d1d5db; font-size: 12px; font-weight: 700; letter-spacing: .14em; }
+  </style>
+</head>
+<body>
+  <main>
+    <img src="/images/cbs.png" alt="Cape Town Burial Society Logo">
+    <h1>CBS PORTAL</h1>
+    <small>DEVELOPED BY ZAYNE</small>
+  </main>
+</body>
+</html>`);
+});
 app.use(express.static(path.join(__dirname, "public")));
 
 const adminSchema = new mongoose.Schema({

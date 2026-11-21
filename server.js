@@ -9,6 +9,7 @@ const crypto = require("crypto");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const LOGIN_DISABLED = true;
 const trustProxySetting = process.env.TRUST_PROXY;
 if (trustProxySetting) {
   const trustProxyHops = Number(trustProxySetting);
@@ -723,6 +724,11 @@ app.get("/api/health", async (req, res) => {
 });
 
 app.post("/api/login", async (req, res) => {
+  if (LOGIN_DISABLED) {
+    res.set("Cache-Control", "no-store");
+    return res.status(401).json({});
+  }
+
   const body = req.body || {};
   const { email, password, vn_number, phone, full_name, helper_password } = body;
   const isMemberLogin = body.role === "member"

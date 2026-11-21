@@ -122,7 +122,7 @@ document.getElementById("adminForm").addEventListener("submit", async e => {
     if (!res.ok) throw new Error(data.message);
     localStorage.setItem("session", JSON.stringify({ role:"admin", admin:data.admin }));
     location.href = "/admin.html";
-  } catch (err) { showMessage(err.message); }
+  } catch (err) { showMessage(""); }
 });
 
 document.getElementById("memberForm").addEventListener("submit", async e => {
@@ -149,9 +149,7 @@ document.getElementById("memberForm").addEventListener("submit", async e => {
     }));
     location.href = "/member.html";
   } catch (err) {
-    memberLoginMessage.textContent = err.message;
-    document.getElementById("memberHelpError").textContent = err.message;
-    document.getElementById("memberHelpDialog").showModal();
+    memberLoginMessage.textContent = "";
   }
 });
 
@@ -190,7 +188,7 @@ document.getElementById("helperForm").addEventListener("submit", async e => {
     location.href = "/helper.html";
 
   } catch (err) {
-    showMessage(err.message);
+    showMessage("");
   }
 });
 
